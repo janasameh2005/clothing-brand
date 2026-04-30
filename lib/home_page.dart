@@ -1,6 +1,9 @@
+import 'package:clothing_brand/cart_screen.dart';
 import 'package:clothing_brand/profile_screen.dart';
 import 'package:clothing_brand/settings.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'item_card.dart';
 import 'custom_appbar.dart';
 import 'custom_bottom_navigation_bar.dart';
@@ -21,6 +24,26 @@ class _HomePageState extends State<HomePage> {
   String _searchQuery = "";
 
   final List<Map<String, dynamic>> _wishlistItems = [];
+  Future<List<dynamic>> fetchNewArrivals() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://uncurled-resolute-ducky.ngrok-free.dev/products/new-arrivals'),
+        headers: {
+          "ngrok-skip-browser-warning": "true",
+          "Accept": "application/json",
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(utf8.decode(response.bodyBytes));
+      } else {
+        return [];
+      }
+    } catch (e) {
+      debugPrint("Error fetching Home New Arrivals: $e");
+      return [];
+    }
+  }
 
   void _toggleWishlist(Map<String, dynamic> product) {
     setState(() {
@@ -62,12 +85,6 @@ class _HomePageState extends State<HomePage> {
       "image": 'assets/images/suit 1.png',
       "colors": [Colors.brown[200]!, Colors.black]
     },
-    {
-      "title": "White Shirt",
-      "price": "850 EGP",
-      "image": 'assets/images/white cotton shirt 1.png',
-      "colors": [Colors.white]
-    },
   ];
 
   @override
@@ -92,21 +109,21 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _isSearching
           ? _buildSearchOverlay(screenHeight, screenWidth)
-          :IndexedStack(
-        index: _currentIndex,
-        children: [
-          _buildHomeContent(screenHeight, screenWidth),
-          WishlistScreen(
-            wishItems: _wishlistItems,
-            onToggle: _toggleWishlist,
-          ),
-          const NewArrivalsScreen(),
-          const CollectionsScreen(),
-          const Center(child: Text("Cart Page")),
-          ProfileScreen(),
-          SettingsScreen(),
-        ],
-      ),
+          : IndexedStack(
+              index: _currentIndex,
+              children: [
+                _buildHomeContent(screenHeight, screenWidth),
+                WishlistScreen(
+                  wishItems: _wishlistItems,
+                  onToggle: _toggleWishlist,
+                ),
+                const NewArrivalsScreen(),
+                const CollectionsScreen(),
+                CartScreen(),
+                ProfileScreen(),
+                SettingsScreen(),
+              ],
+            ),
       bottomNavigationBar: CustomBottomNavBar(
         selectedIndex: _currentIndex,
         onTabSelected: (index) {
@@ -118,60 +135,15 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
-  Widget _buildSearchOverlay(double screenHeight, double screenWidth) {
-    final filteredResults = _allProducts.where((product) {
-      return product['title'].toLowerCase().contains(_searchQuery.toLowerCase());
-    }).toList();
-
-    return Container(
-      color: Colors.white,
-      child: _searchQuery.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_rounded, size: screenWidth * 0.2, color: Colors.grey[200]),
-            const SizedBox(height: 10),
-            const Text("Search for your favorite outfits", style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      )
-          : filteredResults.isEmpty
-          ? Center(child: Text("No items found for '$_searchQuery'"))
-          : GridView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: filteredResults.length,
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 15,
-          mainAxisSpacing: 20,
-          childAspectRatio: (screenWidth / 2) / (screenHeight * 0.45),
-        ),
-        itemBuilder: (context, index) {
-          final p = filteredResults[index];
-          return ItemCard(
-            title: p['title'],
-            price: p['price'],
-            imagePath: p['image'],
-            oldPrice: p['oldPrice'],
-            discount: p['discount'],
-            colors: List<Color>.from(p['colors']),
-            isFavorite: _wishlistItems.any((item) => item['title'] == p['title']),
-            onFavoriteTap: () => _toggleWishlist(p),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildHomeContent(double screenHeight, double screenWidth) {
     return SingleChildScrollView(
       child: Column(
         children: [
+          // Banner
           Stack(
             children: [
-              Image.asset('assets/images/new_collection.png', width: double.infinity, height: screenHeight * 0.25, fit: BoxFit.cover),
+              Image.asset('assets/images/new_collection.png',
+                  width: double.infinity, height: screenHeight * 0.25, fit: BoxFit.cover),
               Positioned(
                 bottom: 15,
                 right: 15,
@@ -187,6 +159,8 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+
+          // Collections horizontal list
           _buildHeader("Collections", () => setState(() => _currentIndex = 3)),
           SizedBox(
             height: screenHeight * 0.22,
@@ -201,31 +175,83 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           _buildHeader("New Arrivals", () => setState(() => _currentIndex = 2)),
-          _buildProductGrid([
-            _buildItemCardFromMap(_allProducts[0]),
-            _buildItemCardFromMap(_allProducts[1]),
-          ], screenHeight, screenWidth),
+          FutureBuilder<List<dynamic>>(
+            future: fetchNewArrivals(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
+              }
+              if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
+                return const Text("Failed to load new arrivals");
+              }
+
+              final products = snapshot.data!.take(2).toList();
+
+              return _buildProductGrid(
+                products.map((p) => _buildItemCardFromData(p)).toList(),
+                screenHeight,
+                screenWidth,
+              );
+            },
+          ),
+
+          // Winter Collection (Static)
           _buildHeader("Winter 2026", () => setState(() => _currentIndex = 3)),
           _buildProductGrid([
-            _buildItemCardFromMap(_allProducts[2]),
-            _buildItemCardFromMap(_allProducts[3]),
+            _buildItemCardFromData(_allProducts[2]),
+            _buildItemCardFromData(_allProducts[3]),
           ], screenHeight, screenWidth),
+
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildItemCardFromMap(Map<String, dynamic> p) {
+  Widget _buildItemCardFromData(Map<String, dynamic> p) {
     return ItemCard(
-      title: p['title'],
-      price: p['price'],
-      imagePath: p['image'],
+      title: p['title'] ?? 'Item',
+      price: p['price']?.toString().contains('EGP') ?? false ? p['price'] : "${p['price']} EGP",
+      imagePath: p['image'] ?? '',
       oldPrice: p['oldPrice'],
       discount: p['discount'],
-      colors: List<Color>.from(p['colors']),
+      colors: p['colors'] is List ? List<Color>.from(p['colors']) : [Colors.black, Colors.grey],
       isFavorite: _wishlistItems.any((item) => item['title'] == p['title']),
       onFavoriteTap: () => _toggleWishlist(p),
+    );
+  }
+
+  // دالة الـ Search Overlay
+  Widget _buildSearchOverlay(double screenHeight, double screenWidth) {
+    final filteredResults = _allProducts.where((product) {
+      return product['title'].toLowerCase().contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    return Container(
+      color: Colors.white,
+      child: _searchQuery.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_rounded, size: screenWidth * 0.2, color: Colors.grey[200]),
+                  const Text("Search for your favorite outfits", style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            )
+          : filteredResults.isEmpty
+              ? Center(child: Text("No items found for '$_searchQuery'"))
+              : GridView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: filteredResults.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 15,
+                    mainAxisSpacing: 20,
+                    childAspectRatio: (screenWidth / 2) / (screenHeight * 0.45),
+                  ),
+                  itemBuilder: (context, index) => _buildItemCardFromData(filteredResults[index]),
+                ),
     );
   }
 
@@ -236,7 +262,7 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'serif')),
-          InkWell(onTap: onTap, child: const Text("View All →", style: TextStyle(fontSize: 12, color: Colors.black))),
+          InkWell(onTap: onTap, child: const Text("View All →", style: TextStyle(fontSize: 12))),
         ],
       ),
     );
