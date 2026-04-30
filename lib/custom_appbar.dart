@@ -1,3 +1,4 @@
+import 'package:clothing_brand/settings.dart';
 import 'package:flutter/material.dart';
 import 'assets.dart';
 
@@ -127,7 +128,9 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
 
           if (settings)
 
-            IconButton(icon: const Icon(Icons.settings, color: Colors.black), onPressed: () {})
+            IconButton(icon: const Icon(Icons.settings, color: Colors.black), onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => SettingsScreen()));
+            })
 
           else if (languageNotification)
 

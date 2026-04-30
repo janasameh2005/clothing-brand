@@ -1,3 +1,5 @@
+import 'package:clothing_brand/profile_screen.dart';
+import 'package:clothing_brand/settings.dart';
 import 'package:flutter/material.dart';
 import 'item_card.dart';
 import 'custom_appbar.dart';
@@ -101,7 +103,8 @@ class _HomePageState extends State<HomePage> {
           const NewArrivalsScreen(),
           const CollectionsScreen(),
           const Center(child: Text("Cart Page")),
-          const Center(child: Text("Profile Page")),
+          ProfileScreen(),
+          SettingsScreen(),
         ],
       ),
       bottomNavigationBar: CustomBottomNavBar(
