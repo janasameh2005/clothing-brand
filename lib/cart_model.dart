@@ -1,7 +1,33 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
+class CartItemModel {
+  final int id;
+  final String name;
+  final String image;
+  final String priceDisplay; 
+  final double price;
+  int quantity;
 
-class CartResponse {
+  CartItemModel({
+    required this.id,
+    required this.name,
+    required this.image,
+    required this.priceDisplay,
+    required this.price,
+    required this.quantity,
+  });
+
+  factory CartItemModel.fromJson(Map<String, dynamic> json) {
+    final productJson = json['product']; 
+    
+    return CartItemModel(
+      id: productJson['id'],
+      name: productJson['name'] ?? 'No Name',
+      image: productJson['image_url'] ?? '',
+      priceDisplay: productJson['price_display'] ?? '',
+      price: double.tryParse(productJson['price'].toString()) ?? 0.0,
+      quantity: json['quantity'] ?? 1,
+    );
+  }
+}class CartResponse {
   final List<CartItemModel> items;
   final Map<String, dynamic> summary;
   final Map<String, dynamic> headerBar;
@@ -12,62 +38,13 @@ class CartResponse {
     required this.headerBar,
   });
 
-  static Future<void> addToCart(int productId, int quantity) async {
-    final url = Uri.parse('https://uncurled-resolute-ducky.ngrok-free.dev/api/cart/add/');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {
-          "Content-Type": "application/json",
-          "ngrok-skip-browser-warning": "true",
-        },
-        body: jsonEncode({
-          "product_id": productId,
-          "quantity": quantity,
-        }),
-      );
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        print("Success: Product added to cart!");
-      } else {
-        print("Error: ${response.body}");
-      }
-    } catch (e) {
-      print("Connection Error: $e");
-    }
-  }
-
   factory CartResponse.fromJson(Map<String, dynamic> json) {
     return CartResponse(
-      items: (json['items'] as List)
+      items: (json['items'] as List? ?? [])
           .map((item) => CartItemModel.fromJson(item))
           .toList(),
       summary: json['summary'] ?? {},
       headerBar: json['header_bar'] ?? {},
-    );
-  }
-}
-
-class CartItemModel {
-  final String name;
-  final String image;
-  final double price;
-  final int quantity;
-
-  CartItemModel({
-    required this.name,
-    required this.image,
-    required this.price,
-    required this.quantity,
-  });
-
-  factory CartItemModel.fromJson(Map<String, dynamic> json) {
-    return CartItemModel(
-      name: json['name'] ?? 'No Name',
-      image: json['image'] ?? '',
-      price: (json['price'] as num).toDouble(),
-      quantity: json['quantity'] ?? 1,
     );
   }
 }

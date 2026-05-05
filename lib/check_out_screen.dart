@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http; // تأكدي من إضافة http في pubspec.yaml
+import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http; 
 import 'dart:convert';
 import 'custom_appbar.dart';
 import 'apptheme.dart';
@@ -20,13 +21,24 @@ class CheckoutScreen extends StatefulWidget {
 
 class _CheckoutScreenState extends State<CheckoutScreen> {
   String? selectedPaymentMethod;
+  bool isAgreed = false;
+
   final TextEditingController cardNumberController = TextEditingController();
   final TextEditingController expiryDateController = TextEditingController();
   final TextEditingController cvvController = TextEditingController();
 
   Future<void> processCheckout() async {
-    const String checkoutUrl = "https://uncurled-resolute-ducky.ngrok-free.dev/checkout";
-    const String paymentUrl = "https://uncurled-resolute-ducky.ngrok-free.dev/checkout/payment";
+    if (selectedPaymentMethod == null) {
+      _showSnackBar("Please select a payment method");
+      return;
+    }
+    if (selectedPaymentMethod == "Visa" && !isAgreed) {
+      _showSnackBar("Please agree to the terms to proceed with Visa");
+      return;
+    }
+
+    const String checkoutUrl = "https://88myhsysdelr.shares.zrok.io/api/checkout";
+    const String paymentUrl = "https://88myhsysdelr.shares.zrok.io/api/checkout/payment";
 
     try {
       final checkoutResponse = await http.post(
@@ -35,10 +47,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
         body: jsonEncode({
           "subtotal": widget.subTotal,
           "total": widget.total,
+          "method": selectedPaymentMethod,
         }),
       );
-      if (selectedPaymentMethod == "MasterCard") {
-        final paymentResponse = await http.post(
+
+      if (selectedPaymentMethod == "Visa") {
+        await http.post(
           Uri.parse(paymentUrl),
           headers: {"Content-Type": "application/json"},
           body: jsonEncode({
@@ -48,20 +62,18 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
             "cvv": cvvController.text,
           }),
         );
-        
-        if (paymentResponse.statusCode == 200) {
-           print("Payment details sent successfully");
-        }
       }
 
       if (checkoutResponse.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Order Placed Successfully!")),
-        );
+        _showSnackBar("Order Placed Successfully!");
       }
     } catch (e) {
       print("Error: $e");
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -86,21 +98,27 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   const SizedBox(height: 25),
                   Text(
-                    "Payment Method (Optional)",
+                    "Payment Method",
                     style: Apptheme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 15),
-                  // جزء اختيار الدفع
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _paymentIcon(Icons.credit_card, "MasterCard"),
-                      _paymentIcon(Icons.paypal, "PayPal"),
+                      _paymentIcon(Icons.money, "Cash"),
                       _paymentIcon(Icons.payment, "Visa"),
                     ],
                   ),
-                  
-                  if (selectedPaymentMethod == "MasterCard") ...[
+                  if (selectedPaymentMethod == "Cash") ...[
+                    const SizedBox(height: 30),
+                    const Divider(color: Color(0xFFE5D0AC)),
+                    const SizedBox(height: 20),
+                    _buildInfoBox(
+                      Icons.delivery_dining,
+                      "Cash on Delivery: Please ensure you have the exact amount ready upon arrival.",
+                    ),
+                  ],
+                  if (selectedPaymentMethod == "Visa") ...[
                     const SizedBox(height: 30),
                     const Divider(color: Color(0xFFE5D0AC)),
                     const SizedBox(height: 10),
@@ -135,6 +153,25 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 20),
+                    InkWell(
+                      onTap: () => setState(() => isAgreed = !isAgreed),
+                      child: Row(
+                        children: [
+                          Checkbox(
+                            value: isAgreed,
+                            activeColor: Apptheme.accentDark,
+                            onChanged: (value) => setState(() => isAgreed = value!),
+                          ),
+                          const Expanded(
+                            child: Text(
+                              "Save card details ",
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Apptheme.accentDark),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ],
               ),
@@ -145,34 +182,43 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
       ),
     );
   }
-
   Widget _paymentIcon(IconData icon, String label) {
     bool isSelected = selectedPaymentMethod == label;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedPaymentMethod = isSelected ? null : label;
-        });
-      },
+      onTap: () => setState(() => selectedPaymentMethod = isSelected ? null : label),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
         decoration: BoxDecoration(
-          border: isSelected
-              ? Border.all(color: Apptheme.accentDark, width: 2)
-              : Border.all(color: Colors.grey.shade300, width: 1),
+          border: Border.all(color: isSelected ? Apptheme.accentDark : Apptheme.greyText, width: isSelected ? 2 : 1),
           borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
+          color: Apptheme.white,
         ),
         child: Column(
           children: [
-            Icon(icon, color: isSelected ? Apptheme.accentDark : Colors.grey, size: 30),
-            Text(label, style: TextStyle(fontSize: 10, color: Colors.grey.shade700)),
+            Icon(icon, color: isSelected ? Apptheme.accentDark : Apptheme.greyText, size: 30),
+            Text(label, style: TextStyle(fontSize: 12, color: isSelected ? Apptheme.accentDark : Apptheme.greyText)),
           ],
         ),
       ),
     );
   }
-
+  Widget _buildInfoBox(IconData icon, String text) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF8F8B7B).withOpacity(0.05),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(color: const Color(0xFFE5D0AC).withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: Apptheme.accentDark, size: 30),
+          const SizedBox(width: 15),
+          Expanded(child: Text(text, style: TextStyle(color: Apptheme.accentDark, fontWeight: FontWeight.w500))),
+        ],
+      ),
+    );
+  }
   Widget _buildTextField(String hint, TextEditingController controller, {TextInputType? keyboardType, bool obscureText = false}) {
     return TextField(
       controller: controller,
@@ -196,11 +242,12 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
     );
   }
 
-  // دالة الـ Bottom Summary (total/subtotal) تستخدم widget.subTotal للوصول للقيم
   Widget _buildBottomSummary(BuildContext context, String buttonText, String subTotalVal, String totalVal, VoidCallback onPressed) {
     return Container(
       decoration: BoxDecoration(
+        color: Apptheme.white,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
         border: Border.all(color: Apptheme.greyText.withOpacity(0.3), width: 1.5),
       ),
       child: Column(

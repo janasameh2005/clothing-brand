@@ -1,4 +1,3 @@
-import 'package:clothing_brand/cart_screen.dart';
 import 'package:clothing_brand/check_out_screen.dart';
 import 'package:clothing_brand/custom_appbar.dart';
 import 'package:flutter/material.dart';
@@ -40,46 +39,50 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
     super.initState();
     isFavoriteLocal = widget.isFavorite;
   }
-  Future<void> addToCart() async {
-    setState(() => isAddingToCart = true);
 
-    final url = Uri.parse('https://uncurled-resolute-ducky.ngrok-free.dev/api/cart/add/');
+  // --- دالة إضافة المنتج إلى السلة عبر الـ API ---
+  Future<void> addToCart() async {
+    setState(() {
+      isAddingToCart = true;
+    });
+
+    final url = Uri.parse('https://88myhsysdelr.shares.zrok.io/api/cart/add/');
 
     try {
-      final numericPrice = widget.price.replaceAll(RegExp(r'[^0-9]'), '');
       final response = await http.post(
         url,
         headers: {
+          "Content-Type": "application/json",
           "ngrok-skip-browser-warning": "true",
         },
-        body: {
+        body: json.encode({
           "name": widget.title,
-          "price": numericPrice,
+          "price": widget.price.replaceAll(RegExp(r'[^0-9]'), ''),
           "image": widget.imagePath,
-          "quantity": "1",
+          "quantity": 1,
           "size": selectedSize,
-        },
-      ).timeout(const Duration(seconds: 10)); // إضافة وقت انتظار لتجنب التعليق
-
-      print("Status: ${response.statusCode}");
-      print("Body: ${response.body}");
+        }),
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Added successfully! ✅"), backgroundColor: Colors.green),
+          const SnackBar(content: Text(" succesful addition!")),
         );
       } else {
-        throw "Server Error: ${response.statusCode}";
+        throw Exception('Failed to add: ${response.statusCode}');
       }
     } catch (e) {
       if (!mounted) return;
-      print("Error Detail: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error: $e"), backgroundColor: Colors.red),
+        SnackBar(content: Text("error adding to cart: $e")),
       );
     } finally {
-      if (mounted) setState(() => isAddingToCart = false);
+      if (mounted) {
+        setState(() {
+          isAddingToCart = false;
+        });
+      }
     }
   }
 
@@ -139,7 +142,9 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                               fontFamily: 'serif')),
                       GestureDetector(
                         onTap: () {
-                          setState(() => isFavoriteLocal = !isFavoriteLocal);
+                          setState(() {
+                            isFavoriteLocal = !isFavoriteLocal;
+                          });
                           widget.onFavoriteTap();
                         },
                         child: Icon(
@@ -151,49 +156,137 @@ class _ProductDetailsScreenState extends State<ProductDetailsScreen> {
                     ],
                   ),
                   const SizedBox(height: 5),
-                  Text(widget.price,
-                      style: TextStyle(
-                          fontSize: screenWidth * 0.045,
-                          fontWeight: FontWeight.bold)),
+                  Row(
+                    children: [
+                      Text(widget.price,
+                          style: TextStyle(
+                              fontSize: screenWidth * 0.045,
+                              fontWeight: FontWeight.bold)),
+                      const SizedBox(width: 10),
+                      if (widget.oldPrice != null)
+                        Text(widget.oldPrice!,
+                            style: const TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                                color: Colors.grey)),
+                      const Spacer(),
+                      const Row(
+                        children: [
+                          Icon(Icons.star, color: Colors.amber, size: 16),
+                          Icon(Icons.star, color: Colors.amber, size: 16),
+                          Icon(Icons.star, color: Colors.amber, size: 16),
+                          Icon(Icons.star, color: Colors.amber, size: 16),
+                          Icon(Icons.star_half, color: Colors.amber, size: 16),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 20),
-                  const Text("Select Size", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text("Select Color",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 10),
                   Row(
-                    children: ['S', 'M', 'L', 'XL'].map((s) => GestureDetector(
-                      onTap: () => setState(() => selectedSize = s),
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                        decoration: BoxDecoration(
-                            color: selectedSize == s ? const Color(0xFF4D0C0C) : Colors.white,
-                            border: Border.all(color: Colors.black12),
-                            borderRadius: BorderRadius.circular(5)),
-                        child: Text(s, style: TextStyle(color: selectedSize == s ? Colors.white : Colors.black)),
-                      ),
-                    )).toList(),
-                  ),
+                      children: [
+                    Colors.pink[50]!,
+                    Colors.indigo[900]!,
+                    Colors.red[900]!,
+                    Colors.green[900]!
+                  ]
+                          .map((c) => Container(
+                              margin: const EdgeInsets.only(right: 10),
+                              child: CircleAvatar(
+                                  backgroundColor: c,
+                                  radius: screenWidth * 0.025)))
+                          .toList()),
+                  const SizedBox(height: 20),
+                  const Text("Select Size",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 10),
+                  Row(
+                      children: ['S', 'M', 'L', 'XL']
+                          .map((s) => GestureDetector(
+                                onTap: () => setState(() => selectedSize = s),
+                                child: Container(
+                                  margin: const EdgeInsets.only(right: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 15, vertical: 8),
+                                  decoration: BoxDecoration(
+                                      color: selectedSize == s
+                                          ? const Color(0xFF4D0C0C)
+                                          : Colors.white,
+                                      border: Border.all(color: Colors.black12),
+                                      borderRadius: BorderRadius.circular(5)),
+                                  child: Text(s,
+                                      style: TextStyle(
+                                          color: selectedSize == s
+                                              ? Colors.white
+                                              : Colors.black)),
+                                ),
+                              ))
+                          .toList()),
                   const SizedBox(height: 30),
+                  
+                  // --- زر Add to Cart المعدل ---
                   SizedBox(
-                    width: double.infinity,
-                    height: screenHeight * 0.06,
-                    child: ElevatedButton(
-                      onPressed: isAddingToCart ? null : addToCart,
-                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4D0C0C)),
-                      child: isAddingToCart
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text("Add to cart", style: TextStyle(color: Colors.white)),
-                    ),
-                  ),
+                      width: double.infinity,
+                      height: screenHeight * 0.06,
+                      child: ElevatedButton(
+                          onPressed: isAddingToCart ? null : addToCart,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF4D0C0C)),
+                          child: isAddingToCart 
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text("Add to cart",
+                              style: TextStyle(color: Colors.white)))),
+                  
                   const SizedBox(height: 10),
                   SizedBox(
-                    width: double.infinity,
-                    height: screenHeight * 0.06,
-                    child: ElevatedButton(
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckoutScreen())),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                      child: const Text("Buy it now", style: TextStyle(color: Colors.white)),
+                      width: double.infinity,
+                      height: screenHeight * 0.06,
+                      child: ElevatedButton(
+                          onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const CheckoutScreen())),
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.black),
+                          child: const Text("Buy it now",
+                              style: TextStyle(color: Colors.white)))),
+                  const SizedBox(height: 25),
+                  const Text("Description",
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                      "High-waisted formal pants designed with soft front pleats...",
+                      style: TextStyle(color: Colors.grey, fontSize: 13)),
+                  const SizedBox(height: 40),
+                  const Text(
+                    "You also may like",
+                    style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'serif'),
+                  ),
+                  const SizedBox(height: 15),
+                  SizedBox(
+                    height: screenHeight * 0.35,
+                    child: GridView.count(
+                      scrollDirection: Axis.horizontal,
+                      crossAxisCount: 1,
+                      mainAxisSpacing: 15,
+                      childAspectRatio: 1.35,
+                      children: [
+                        ItemCard(
+                          title: "Floral Dress",
+                          price: "1400 EGP",
+                          imagePath: 'assets/images/dress3 1.png',
+                          colors: [Colors.pink[50]!, Colors.red],
+                        ),
+                        ItemCard(
+                          title: "Cropped Trench",
+                          price: "750 EGP",
+                          imagePath: 'assets/images/suit 1.png',
+                          colors: [Colors.brown, Colors.black],
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 20),
                 ],
               ),
             ),

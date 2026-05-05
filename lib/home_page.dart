@@ -27,7 +27,7 @@ class _HomePageState extends State<HomePage> {
   Future<List<dynamic>> fetchNewArrivals() async {
     try {
       final response = await http.get(
-        Uri.parse('https://uncurled-resolute-ducky.ngrok-free.dev/products/new-arrivals'),
+        Uri.parse('https://88myhsysdelr.shares.zrok.io/api/products/new-arrivals'),
         headers: {
           "ngrok-skip-browser-warning": "true",
           "Accept": "application/json",
