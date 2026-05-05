@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
     "name": "clothes",
     "short_name": "clothes",
+=======
+    "name": "clothing_brand",
+    "short_name": "clothing_brand",
+>>>>>>> e017c960c780cd06065218d0b130d7608d792847
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
+<<<<<<< HEAD
         android:label="clothes"
+=======
+        android:label="clothing_brand"
+>>>>>>> e017c960c780cd06065218d0b130d7608d792847
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

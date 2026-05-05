@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 # clothes
+=======
+# clothing_brand
+>>>>>>> e017c960c780cd06065218d0b130d7608d792847
 
 A new Flutter project.
 

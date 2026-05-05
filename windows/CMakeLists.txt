@@ -1,10 +1,18 @@
 # Project-level configuration.
 cmake_minimum_required(VERSION 3.14)
+<<<<<<< HEAD
 project(clothes LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
 set(BINARY_NAME "clothes")
+=======
+project(clothing_brand LANGUAGES CXX)
+
+# The name of the executable created for the application. Change this to change
+# the on-disk name of your application.
+set(BINARY_NAME "clothing_brand")
+>>>>>>> e017c960c780cd06065218d0b130d7608d792847
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
