@@ -19,7 +19,6 @@ class OrderDetailsScreen extends StatefulWidget {
 }
 
 class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
-  // متغيرات الحالة للـ Checkbox والتحكم في النصوص
   bool saveAddress = false;
   final TextEditingController countryController = TextEditingController();
   final TextEditingController stateController = TextEditingController();
@@ -40,10 +39,8 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       appBar: CustomAppBar(showArrowBack: true, languageNotification: true),
       body: Column(
         children: [
-          // الجزء القابل للتمرير
           Expanded(
             child: SingleChildScrollView(
-              // الـ Padding الأساسي لكل محتوى الصفحة
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,8 +56,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     ),
                   ),
                   const SizedBox(height: 30),
-
-                  // قائمة المنتجات
                   if (widget.cartItems.isEmpty)
                     const Center(child: Text("Your cart is empty"))
                   else
@@ -70,10 +65,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                       itemCount: widget.cartItems.length,
                       itemBuilder: (context, index) {
                         final item = widget.cartItems[index];
+                        double calculatedOldPrice = item.price * 1.2;
                         return OrderItemCard(
                           name: item.name,
                           price: "${item.priceDisplay} EGP",
-                          oldPrice: "1500 EGP", // قيمة افتراضية أو من الموديل
+                          oldPrice: "${calculatedOldPrice.toStringAsFixed(0)} EGP"??"0 EGP",
                           color: "N/A",
                           size: "N/A",
                           rating: "4.5/5",
@@ -83,25 +79,17 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
                     ),
 
                   const SizedBox(height: 25),
-                  
-                  // قسم العنوان
                   _buildAddressSection(),
-                  
                   const SizedBox(height: 20),
                 ],
               ),
             ),
           ),
-
-          // ملخص السعر وزر الدفع الثابت في الأسفل
           _buildBottomSummary(context),
         ],
       ),
     );
   }
-
-  // --- Widgets داخلية ---
-
   Widget _buildAddressSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -115,8 +103,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           ),
         ),
         const SizedBox(height: 20),
-
-        // صف الـ Country والـ State
         Row(
           children: [
             Expanded(
@@ -129,16 +115,11 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
           ],
         ),
         const SizedBox(height: 15),
-
-        // حقل الـ City
         SizedBox(
           width: MediaQuery.of(context).size.width * 0.45,
           child: _buildLabeledField("City/Town", "City/Town", cityController),
         ),
-
         const SizedBox(height: 10),
-
-        // الـ Checkbox التفاعلي
         InkWell(
           onTap: () {
             setState(() {
@@ -172,7 +153,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
       ],
     );
   }
-
   Widget _buildLabeledField(String label, String hint, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -265,9 +245,6 @@ class _OrderDetailsScreenState extends State<OrderDetailsScreen> {
     );
   }
 }
-
-// --- Card الخاص بكل منتج ---
-
 class OrderItemCard extends StatelessWidget {
   final String name, price, oldPrice, color, size, rating, imagePath;
 
@@ -289,7 +266,6 @@ class OrderItemCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // صورة المنتج مع السعر القديم
           Stack(
             clipBehavior: Clip.none,
             children: [
@@ -333,7 +309,6 @@ class OrderItemCard extends StatelessWidget {
             ],
           ),
           const SizedBox(width: 20),
-          // تفاصيل المنتج
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -350,7 +325,6 @@ class OrderItemCard extends StatelessWidget {
       ),
     );
   }
-
   Widget _richTextItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),

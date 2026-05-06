@@ -51,10 +51,25 @@ class _ItemCardState extends State<ItemCard> {
                     BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2)),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(15),
-                  child: Image.asset(widget.imagePath, width: double.infinity, height: double.infinity, fit: BoxFit.cover),
-                ),
+                child:
+ClipRRect(
+  borderRadius: BorderRadius.circular(15),
+  child: widget.imagePath.startsWith('http')
+      ? Image.network(
+          widget.imagePath,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.broken_image),
+        )
+      : Image.asset(
+          widget.imagePath,
+          width: double.infinity,
+          height: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+        ),
+),
               ),
               if (widget.discount != null)
                 Positioned(

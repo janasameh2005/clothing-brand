@@ -1,9 +1,10 @@
-import 'package:clothing_brand/order_details_screen.dart';
+import 'package:clothing_brand/cart_cubit.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:clothing_brand/cart_items.dart'; // قائمة globalCartItems
+import 'package:clothing_brand/order_details_screen.dart';
 import 'package:clothing_brand/apptheme.dart';
 import 'package:clothing_brand/cart_model.dart';
-import 'package:clothing_brand/cart_cubit.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CartScreen extends StatefulWidget {
   const CartScreen({super.key});
@@ -13,175 +14,174 @@ class CartScreen extends StatefulWidget {
 }
 
 class _CartScreenState extends State<CartScreen> {
+  double calculateSubTotal() {
+    double total = 0;
+    for (var item in globalCartItems) {
+      String priceString = item['price'].toString().replaceAll(RegExp(r'[^0-9.]'), '');
+      double price = double.tryParse(priceString) ?? 0;
+      int quantity = item['quantity'] ?? 1;
+      total += (price * quantity);
+    }
+    return total;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => CartCubit()..fetchCart(),
-      child: Scaffold(
-        backgroundColor: Apptheme.white,
-        body: BlocBuilder<CartCubit, CartState>(
-          builder: (context, state) {
-            if (state is CartLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Apptheme.accentDark),
-              );
-            } else if (state is CartError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text("Error: ${state.message}"),
-                    const SizedBox(height: 10),
-                    ElevatedButton(
-                      onPressed: () => context.read<CartCubit>().fetchCart(),
-                      child: const Text("Retry"),
-                    )
-                  ],
-                ),
-              );
-            } else if (state is CartLoaded) {
-              final cartData = state.cartData;
+    double subTotal = calculateSubTotal();
+    double shipping = 100; 
+    double finalTotal = globalCartItems.isEmpty ? 0 : subTotal + shipping;
 
-              if (cartData.items.isEmpty) {
-                return const Center(
-                  child: Text("Your cart is currently empty. Start shopping!"),
-                );
-              }
-
-              return Column(
-                children: [
-                  Expanded(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                      child: Column(
-                        children: [
-                          const SizedBox(height: 50),
-                          Text(
-                            cartData.headerBar['title'] ?? "My Cart",
-                            style: Apptheme.textTheme.displaySmall
-                                ?.copyWith(fontFamily: 'Serif', fontWeight: FontWeight.w500),
-                          ),
-                          const SizedBox(height: 20),
-                          ListView.builder(
-                            shrinkWrap: true,
-                            physics: const NeverScrollableScrollPhysics(),
-                            itemCount: cartData.items.length,
-                            itemBuilder: (ctx, index) {
-                              final item = cartData.items[index];
-                              return CartItemWidget(
-                                item: item, 
-                                cartCubit: context.read<CartCubit>()
-                              );
-                            },
-                          ),
-                          const SizedBox(height: 30),
-                          _buildPromoCodeField(),
-                          const SizedBox(height: 20),
-                        ],
-                      ),
-                    ),
+    return Scaffold(
+      backgroundColor: const Color(0xFFFDFBF0),
+      body: globalCartItems.isEmpty
+          ? _buildEmptyCart()
+          : Column(
+              children: [
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 8),
+                  child: Text(
+                    "My Cart",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.w500, color: Colors.black),
                   ),
-                  _buildBottomSummary(context, cartData),
-                ],
-              );
-            }
-            return const SizedBox();
-          },
-        ),
-      ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    itemCount: globalCartItems.length,
+                    itemBuilder: (context, index) {
+                      final itemData = globalCartItems[index];
+                      String currentPriceStr = itemData['price'].toString().replaceAll(RegExp(r'[^0-9.]'), '');
+                      double currentPrice = double.tryParse(currentPriceStr) ?? 0;
+                    
+                      String oPrice = itemData['old_price']?.toString() ?? 
+                                     (currentPrice * 1.25).toStringAsFixed(0);
+                      final itemModel = CartItemModel(
+                        id: index,
+                        name: itemData['title'] ?? "No Name",
+                        image: itemData['image'] ?? "",
+                        price: currentPrice,
+                        quantity: itemData['quantity'] ?? 1,
+                        priceDisplay: "${itemData['price']}",
+                        oldPrice: oPrice, 
+                      );
+                      return CartItemWidget(
+                        item: itemModel,
+                        onDelete: () {
+                          setState(() {
+                            globalCartItems.removeAt(index);
+                          });
+                        },
+                        onQuantityChanged: (newQty) {
+                          setState(() {
+                            globalCartItems[index]['quantity'] = newQty;
+                          });
+                        }, cartCubit: context.read<CartCubit>(),
+                      );
+                    },
+                  ),
+                ),
+                _buildPromoCodeField(),
+                _buildBottomSummary(context, subTotal, finalTotal),
+              ],
+            ),
+    );
+  }
+
+  Widget _buildEmptyCart() {
+    return const Center(
+      child: Text("Your cart is empty!", style: TextStyle(fontSize: 18, color: Colors.grey)),
     );
   }
 
   Widget _buildPromoCodeField() {
-    return TextField(
-      decoration: InputDecoration(
-        hintText: "Promo Code",
-        filled: true,
-        fillColor: const Color(0xFF8F8B7B).withOpacity(0.1),
-        suffixIcon: Padding(
-          padding: const EdgeInsets.all(6.0),
-          child: ElevatedButton(
-            onPressed: () {},
-            style: ElevatedButton.styleFrom(
-                backgroundColor: Apptheme.accentDark),
-            child: const Text("Apply", style: TextStyle(color: Colors.white)),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: "Promo Code",
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+          suffixIcon: Padding(
+            padding: const EdgeInsets.all(6.0),
+            child: ElevatedButton(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A0404),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              ),
+              child: const Text("Apply", style: TextStyle(color: Colors.white)),
+            ),
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(30),
+            borderSide: BorderSide(color: Colors.grey.shade300),
           ),
         ),
-        border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none),
       ),
     );
   }
 
-  Widget _buildBottomSummary(BuildContext context, dynamic cartData) {
-    String btnText = cartData.summary['button_text'] ?? "Buy Now";
-    String subTotal = cartData.summary['sub_total'] ?? "0 EGP";
-    String total = cartData.summary['total'] ?? "0 EGP";
-
+  Widget _buildBottomSummary(BuildContext context, double subTotal, double total) {
     return Container(
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
         color: Colors.white,
-        border: Border(
-            top: BorderSide(color: Apptheme.greyText.withOpacity(0.3))),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text("Sub Total",
-                    style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(subTotal,
-                    style: const TextStyle(fontWeight: FontWeight.bold)),
-              ],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Sub Total", style: TextStyle(fontSize: 16, color: Colors.grey)),
+              Text("${subTotal.toStringAsFixed(0)} EGP", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.all(20),
-            color: Apptheme.primaryBackground,
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text("Total",
-                        style: TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                    Text(total,
-                        style: const TextStyle(
-                            fontSize: 20, fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  height: 60,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => OrderDetailsScreen(
-                          cartItems: cartData.items,
-                          totalPrice: total,
-                        ),
-                      ),
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text("Total", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              Text("${total.toStringAsFixed(0)} EGP", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF4A0404))),
+            ],
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            width: double.infinity,
+            height: 55,
+            child: ElevatedButton(
+              onPressed: () {
+                List<CartItemModel> itemsForOrder = globalCartItems.map((item) {
+                   String op = item['old_price']?.toString() ?? "1500";
+                   return CartItemModel(
+                    id: 0,
+                    name: item['title'],
+                    image: item['image'],
+                    price: double.tryParse(item['price'].toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0,
+                    quantity: item['quantity'],
+                    priceDisplay: "${item['price']} EGP",
+                    oldPrice: op,
+                  );
+                }).toList();
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OrderDetailsScreen(
+                      cartItems: itemsForOrder,
+                      totalPrice: "${total.toStringAsFixed(0)} EGP",
                     ),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Apptheme.accentDark,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(24))),
-                    child: Text(btnText,
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
                   ),
-                ),
-              ],
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF4A0404),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+              ),
+              child: const Text("Buy Now", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -189,14 +189,17 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 }
-
 class CartItemWidget extends StatelessWidget {
   final CartItemModel item;
   final CartCubit cartCubit;
+  final VoidCallback onDelete;
+  final Function(int) onQuantityChanged;
 
   const CartItemWidget({
     required this.item,
     required this.cartCubit,
+    required this.onDelete,
+    required this.onQuantityChanged,
     super.key,
   });
 
@@ -213,7 +216,6 @@ class CartItemWidget extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // القسم الأيسر: الصورة والتحكم في الكمية
           Column(
             children: [
               Stack(
@@ -255,13 +257,11 @@ class CartItemWidget extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          // زر النقصان
-// زر النقصان
 GestureDetector(
   behavior: HitTestBehavior.opaque,
   onTap: () {
     if (item.quantity > 1) {
-      cartCubit.updateQuantity(item.id, item.quantity - 1); 
+      onQuantityChanged(item.quantity - 1);
     }
   },
   child: const Padding(
@@ -277,7 +277,7 @@ Text(
 GestureDetector(
   behavior: HitTestBehavior.opaque,
   onTap: () {
-      cartCubit.updateQuantity(item.id, item.quantity + 1);
+      onQuantityChanged(item.quantity + 1);
   },
   child: const Padding(
     padding: EdgeInsets.all(10.0),
@@ -294,7 +294,6 @@ GestureDetector(
             ],
           ),
           const SizedBox(width: 15),
-          // القسم الأيمن: البيانات
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -314,21 +313,19 @@ GestureDetector(
                     ),
                     IconButton(
                       icon: const Icon(Icons.delete_outline, color: Color(0xFF4A0404)),
-                      onPressed: () => cartCubit.removeFromCart(item.id),
+                      onPressed: onDelete,
                     ),
                   ],
                 ),
-                // تقييم النجوم
                 Row(
                   children: List.generate(5, (index) => 
                     const Icon(Icons.star, color: Color(0xFFFFB800), size: 18)
                   ),
                 ),
                 const SizedBox(height: 12),
-                // السعر المشطوب
-                const Text(
-                  "1500 EGP",
-                  style: TextStyle(
+                Text(
+                  "${item.oldPrice} EGP",
+                  style: const TextStyle(
                     decoration: TextDecoration.lineThrough,
                     color: Color(0xFF4A0404),
                     fontSize: 14,
@@ -336,7 +333,6 @@ GestureDetector(
                   ),
                 ),
                 const SizedBox(height: 4),
-                // السعر الحالي ودوائر الألوان
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [

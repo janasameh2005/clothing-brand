@@ -19,36 +19,11 @@ class CartError extends CartState {
 class CartCubit extends Cubit<CartState> {
   CartCubit() : super(CartInitial());
 
-  Future<void> addToCart(int productId) async {
-    emit(CartLoading());
-    try {
-      final url = Uri.parse('https://88myhsysdelr.shares.zrok.io/api/cart/add/');
-      
-      final response = await http.post(
-        url,
-        headers: {
-          "ngrok-skip-browser-warning": "any-value",
-          "Content-Type": "application/json",
-        },
-        body: jsonEncode({
-          "product_id": productId,
-          "quantity": 1,
-        }),
-      );
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        emit(CartLoaded(CartResponse.fromJson(json.decode(response.body))));
-      } else {
-        emit(CartError("Error: ${response.statusCode}"));
-      }
-    } catch (e) {
-      emit(CartError(e.toString()));
-    }
-  }
     Future<void> fetchCart() async {
     emit(CartLoading());
     try {
-      final url = Uri.parse('https://88myhsysdelr.shares.zrok.io/api/cart/');
+      final url = Uri.parse('https://10cxyvxk6z8u.shares.zrok.io/api/cart/');
       
       final response = await http.get(
         url,
@@ -70,7 +45,7 @@ class CartCubit extends Cubit<CartState> {
  Future<void> removeFromCart(int productId) async {
   emit(CartLoading());
   try {
-    final url = Uri.parse('https://88myhsysdelr.shares.zrok.io/api/cart/');
+    final url = Uri.parse('https://10cxyvxk6z8u.shares.zrok.io/api/cart/');
 
     final response = await http.delete(
       url,

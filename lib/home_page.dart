@@ -24,19 +24,25 @@ class _HomePageState extends State<HomePage> {
   String _searchQuery = "";
 
   final List<Map<String, dynamic>> _wishlistItems = [];
+
+  // دالة جلب البيانات من الـ API مع تحديث الهيدرز وتنسيق الـ JSON الجديد
   Future<List<dynamic>> fetchNewArrivals() async {
     try {
       final response = await http.get(
-        Uri.parse('https://88myhsysdelr.shares.zrok.io/api/products/new-arrivals'),
+        Uri.parse('https://10cxyvxk6z8u.shares.zrok.io/api/products/new-arrivals/'),
         headers: {
-          "ngrok-skip-browser-warning": "true",
           "Accept": "application/json",
+          "zrok-skip-browser-warning": "true", // لتخطي رسالة حماية zrok
+          "ngrok-skip-browser-warning": "true",
         },
       );
 
       if (response.statusCode == 200) {
-        return json.decode(utf8.decode(response.bodyBytes));
+        final data = json.decode(utf8.decode(response.bodyBytes));
+        // الوصول لمفتاح items حسب هيكل الـ JSON الذي أرسلتِه
+        return data['items'] ?? [];
       } else {
+        debugPrint("Server Error: ${response.statusCode}");
         return [];
       }
     } catch (e) {
@@ -47,15 +53,23 @@ class _HomePageState extends State<HomePage> {
 
   void _toggleWishlist(Map<String, dynamic> product) {
     setState(() {
-      bool isExist = _wishlistItems.any((item) => item['title'] == product['title']);
+      bool isExist = _wishlistItems.any((item) => 
+        (item['id'] != null && item['id'] == product['id']) || 
+        (item['title'] == product['title'] && item['title'] != null)
+      );
+      
       if (isExist) {
-        _wishlistItems.removeWhere((item) => item['title'] == product['title']);
+        _wishlistItems.removeWhere((item) => 
+          (item['id'] != null && item['id'] == product['id']) || 
+          (item['title'] == product['title'])
+        );
       } else {
         _wishlistItems.add(product);
       }
     });
   }
 
+  // القائمة الثابتة (Assets)
   final List<Map<String, dynamic>> _allProducts = [
     {
       "title": "Summer Dress",
@@ -135,6 +149,7 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
+
   Widget _buildHomeContent(double screenHeight, double screenWidth) {
     return SingleChildScrollView(
       child: Column(
@@ -159,8 +174,6 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-
-          // Collections horizontal list
           _buildHeader("Collections", () => setState(() => _currentIndex = 3)),
           SizedBox(
             height: screenHeight * 0.22,
@@ -179,23 +192,24 @@ class _HomePageState extends State<HomePage> {
             future: fetchNewArrivals(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(height: 100, child: Center(child: CircularProgressIndicator()));
+                return const SizedBox(height: 150, child: Center(child: CircularProgressIndicator(color: Color(0xFF4D0C0C))));
               }
               if (snapshot.hasError || !snapshot.hasData || snapshot.data!.isEmpty) {
-                return const Text("Failed to load new arrivals");
+                return const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Text("Unable to load latest items", style: TextStyle(color: Colors.grey)),
+                );
               }
 
-              final products = snapshot.data!.take(2).toList();
+              final apiProducts = snapshot.data!.take(2).toList();
 
               return _buildProductGrid(
-                products.map((p) => _buildItemCardFromData(p)).toList(),
+                apiProducts.map((p) => _buildItemCardFromData(p)).toList(),
                 screenHeight,
                 screenWidth,
               );
             },
           ),
-
-          // Winter Collection (Static)
           _buildHeader("Winter 2026", () => setState(() => _currentIndex = 3)),
           _buildProductGrid([
             _buildItemCardFromData(_allProducts[2]),
@@ -207,21 +221,35 @@ class _HomePageState extends State<HomePage> {
       ),
     );
   }
-
   Widget _buildItemCardFromData(Map<String, dynamic> p) {
+    List<Color> extractedColors = [Colors.black, Colors.grey];
+    if (p['colors'] != null && p['colors'] is List && p['colors'].isNotEmpty) {
+      if (p['colors'][0] is Map) {
+        // إذا كانت بيانات API (hex_code)
+        extractedColors = (p['colors'] as List).map((c) {
+          String hex = c['hex_code'].toString().replaceAll('#', '');
+          return Color(int.parse("FF$hex", radix: 16));
+        }).toList();
+      } else {
+        extractedColors = List<Color>.from(p['colors']);
+      }
+    }
+
     return ItemCard(
-      title: p['title'] ?? 'Item',
-      price: p['price']?.toString().contains('EGP') ?? false ? p['price'] : "${p['price']} EGP",
-      imagePath: p['image'] ?? '',
-      oldPrice: p['oldPrice'],
-      discount: p['discount'],
-      colors: p['colors'] is List ? List<Color>.from(p['colors']) : [Colors.black, Colors.grey],
-      isFavorite: _wishlistItems.any((item) => item['title'] == p['title']),
+      title: p['name'] ?? p['title'] ?? 'Product',
+      price: p['price_display'] ?? p['price']?.toString() ?? '0 EGP',
+      imagePath: p['image_url'] ?? p['image'] ?? '',
+      oldPrice: p['discount_price']?.toString(),
+      discount: p['discount_label'] ?? p['discount'],
+      colors: extractedColors,
+      isFavorite: _wishlistItems.any((item) => 
+        (item['id'] != null && item['id'] == p['id']) || 
+        (item['title'] == p['title'] && item['title'] != null)
+      ),
       onFavoriteTap: () => _toggleWishlist(p),
     );
   }
 
-  // دالة الـ Search Overlay
   Widget _buildSearchOverlay(double screenHeight, double screenWidth) {
     final filteredResults = _allProducts.where((product) {
       return product['title'].toLowerCase().contains(_searchQuery.toLowerCase());
@@ -248,7 +276,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 15,
                     mainAxisSpacing: 20,
-                    childAspectRatio: (screenWidth / 2) / (screenHeight * 0.45),
+                    childAspectRatio: 0.55,
                   ),
                   itemBuilder: (context, index) => _buildItemCardFromData(filteredResults[index]),
                 ),
@@ -257,12 +285,12 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildHeader(String title, VoidCallback onTap) {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, fontFamily: 'serif')),
-          InkWell(onTap: onTap, child: const Text("View All →", style: TextStyle(fontSize: 12))),
+          InkWell(onTap: onTap, child: const Text("View All →", style: TextStyle(fontSize: 12, color: Colors.grey))),
         ],
       ),
     );
@@ -277,7 +305,7 @@ class _HomePageState extends State<HomePage> {
         crossAxisCount: 2,
         crossAxisSpacing: 15,
         mainAxisSpacing: 15,
-        childAspectRatio: (screenWidth / 2) / (screenHeight * 0.45),
+        childAspectRatio: 0.55, // نسبة العرض للطول لضمان عدم ظهور أخطاء overflow
         children: items,
       ),
     );
@@ -288,7 +316,10 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.only(right: 15),
       child: Column(
         children: [
-          Image.asset(path, height: screenHeight * 0.17, width: screenWidth * 0.3, fit: BoxFit.cover),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(10),
+            child: Image.asset(path, height: screenHeight * 0.15, width: screenWidth * 0.3, fit: BoxFit.cover),
+          ),
           const SizedBox(height: 5),
           Row(
             children: [

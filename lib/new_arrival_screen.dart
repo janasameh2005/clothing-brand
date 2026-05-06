@@ -1,4 +1,3 @@
-import 'package:clothing_brand/product_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'apptheme.dart';
@@ -16,82 +15,86 @@ class _NewArrivalsScreenState extends State<NewArrivalsScreen> {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => NewArrivalsCubit()..getNewArrivals(),
+      create: (context) => NewArrivalsCubit()..fetchNewArrivals(),
       child: Scaffold(
         backgroundColor: Apptheme.primaryBackground,
         body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: BlocBuilder<NewArrivalsCubit, NewArrivalsState>(
-                  builder: (context, state) {
-                    if (state is NewArrivalsLoading) {
-                      return const Center(child: CircularProgressIndicator(color: Apptheme.accentDark));
-                    } else if (state is NewArrivalsSuccess) {
-                      return _buildProductGrid(state.products);
-                    } else if (state is NewArrivalsError) {
-                      return _buildErrorWidget(context, state.errorMessage);
-                    }
-                    return const SizedBox();
-                  },
-                ),
-              ),
-            ],
+          child: BlocBuilder<NewArrivalsCubit, NewArrivalsState>(
+            builder: (context, state) {
+              if (state is NewArrivalsLoading) {
+                return const Center(child: CircularProgressIndicator(color: Apptheme.accentDark));
+              } 
+              
+              if (state is NewArrivalsError) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(state.message),
+                      ElevatedButton(
+                        onPressed: () => context.read<NewArrivalsCubit>().fetchNewArrivals(),
+                        child: const Text("Retry"),
+                      )
+                    ],
+                  ),
+                );
+              }
+
+              if (state is NewArrivalsSuccess) {
+                return Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 20),
+                      child: Text(
+                        state.title,
+                        style: Apptheme.textTheme.displaySmall?.copyWith(
+                          fontFamily: 'serif',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: GridView.builder(
+                          itemCount: state.products.length,
+                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 15,
+                            mainAxisSpacing: 20,
+                            childAspectRatio: 0.55,
+                          ),
+                          itemBuilder: (context, index) {
+                            final product = state.products[index];
+                            return ItemCard(
+                              title: product.name,
+                              price: product.priceDisplay,
+                              imagePath: product.imageUrl,
+                              colors: product.colors,
+                            );
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+              return const SizedBox();
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 20),
-      child: Text(
-        "New Arrivals",
-        style: Apptheme.textTheme.displaySmall?.copyWith(
-          fontFamily: 'serif',
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildProductGrid(List<ProductModel> products) {
-    if (products.isEmpty) return const Center(child: Text("No products found."));
-    
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GridView.builder(
-        itemCount: products.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
-          crossAxisSpacing: 15,
-          mainAxisSpacing: 20,
-          childAspectRatio: 0.55,
-        ),
-        itemBuilder: (context, index) {
-          final p = products[index];
-          return ItemCard(
-            title: p.title,
-            price: "${p.price} EGP",
-            imagePath: p.image,
-            colors: const [Colors.black, Colors.grey],
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildErrorWidget(BuildContext context, String message) {
+  Widget _buildErrorWidget(BuildContext context, String error) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 40),
-          Text(message, textAlign: TextAlign.center),
+          Text("Oops! $error"),
           ElevatedButton(
-            onPressed: () => context.read<NewArrivalsCubit>().getNewArrivals(),
+            onPressed: () => context.read<NewArrivalsCubit>().fetchNewArrivals(),
             child: const Text("Retry"),
           )
         ],

@@ -5,6 +5,7 @@ class CartItemModel {
   final String priceDisplay; 
   final double price;
   int quantity;
+  final String? oldPrice;
 
   CartItemModel({
     required this.id,
@@ -13,6 +14,7 @@ class CartItemModel {
     required this.priceDisplay,
     required this.price,
     required this.quantity,
+    this.oldPrice,
   });
 
   factory CartItemModel.fromJson(Map<String, dynamic> json) {
@@ -25,6 +27,7 @@ class CartItemModel {
       priceDisplay: productJson['price_display'] ?? '',
       price: double.tryParse(productJson['price'].toString()) ?? 0.0,
       quantity: json['quantity'] ?? 1,
+      oldPrice: productJson['old_price'].toString(),
     );
   }
 }class CartResponse {
