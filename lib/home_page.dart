@@ -1,12 +1,14 @@
 import 'package:clothing_brand/profile_screen.dart';
 import 'package:clothing_brand/settings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // مهم للـ Cubit
 import 'item_card.dart';
 import 'custom_appbar.dart';
 import 'custom_bottom_navigation_bar.dart';
 import 'new_arrival_screen.dart';
 import 'collections_screen.dart';
 import 'wishlist_screen.dart';
+import '../cubit/product_details_cubit.dart'; // تأكدي من المسار
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -33,20 +35,24 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
+  // الداتا هنا بقت كاملة بالـ IDs عشان نربطها بالـ MockData
   final List<Map<String, dynamic>> _allProducts = [
     {
+      "id": 1,
       "title": "Summer Dress",
       "price": "1400 EGP",
       "image": 'assets/images/dress3 1.png',
       "colors": [Colors.pink[50]!, Colors.blue[900]!, Colors.red[900]!]
     },
     {
+      "id": 2,
       "title": "Linen Suit",
       "price": "2000 EGP",
       "image": 'assets/images/suit 1.png',
       "colors": [Colors.grey, Colors.green[900]!, Colors.black]
     },
     {
+      "id": 3,
       "title": "Zara Blazer",
       "price": "1120 EGP",
       "oldPrice": "1600 EGP",
@@ -55,6 +61,7 @@ class _HomePageState extends State<HomePage> {
       "colors": [Colors.white, Colors.blue[900]!, Colors.black]
     },
     {
+      "id": 4, // ضفتلك ID هنا برضه
       "title": "Cropped Trench",
       "price": "750 EGP",
       "oldPrice": "1500 EGP",
@@ -63,6 +70,7 @@ class _HomePageState extends State<HomePage> {
       "colors": [Colors.brown[200]!, Colors.black]
     },
     {
+      "id": 5,
       "title": "White Shirt",
       "price": "850 EGP",
       "image": 'assets/images/white cotton shirt 1.png',
@@ -92,7 +100,7 @@ class _HomePageState extends State<HomePage> {
       ),
       body: _isSearching
           ? _buildSearchOverlay(screenHeight, screenWidth)
-          :IndexedStack(
+          : IndexedStack(
         index: _currentIndex,
         children: [
           _buildHomeContent(screenHeight, screenWidth),
@@ -127,16 +135,7 @@ class _HomePageState extends State<HomePage> {
     return Container(
       color: Colors.white,
       child: _searchQuery.isEmpty
-          ? Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.search_rounded, size: screenWidth * 0.2, color: Colors.grey[200]),
-            const SizedBox(height: 10),
-            const Text("Search for your favorite outfits", style: TextStyle(color: Colors.grey)),
-          ],
-        ),
-      )
+          ? _buildSearchPlaceholder(screenWidth)
           : filteredResults.isEmpty
           ? Center(child: Text("No items found for '$_searchQuery'"))
           : GridView.builder(
@@ -149,18 +148,21 @@ class _HomePageState extends State<HomePage> {
           childAspectRatio: (screenWidth / 2) / (screenHeight * 0.45),
         ),
         itemBuilder: (context, index) {
-          final p = filteredResults[index];
-          return ItemCard(
-            title: p['title'],
-            price: p['price'],
-            imagePath: p['image'],
-            oldPrice: p['oldPrice'],
-            discount: p['discount'],
-            colors: List<Color>.from(p['colors']),
-            isFavorite: _wishlistItems.any((item) => item['title'] == p['title']),
-            onFavoriteTap: () => _toggleWishlist(p),
-          );
+          return _buildItemCardFromMap(filteredResults[index]);
         },
+      ),
+    );
+  }
+
+  Widget _buildSearchPlaceholder(double screenWidth) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_rounded, size: screenWidth * 0.2, color: Colors.grey[200]),
+          const SizedBox(height: 10),
+          const Text("Search for your favorite outfits", style: TextStyle(color: Colors.grey)),
+        ],
       ),
     );
   }
@@ -169,9 +171,11 @@ class _HomePageState extends State<HomePage> {
     return SingleChildScrollView(
       child: Column(
         children: [
+          // Banner Section
           Stack(
             children: [
-              Image.asset('assets/images/new_collection.png', width: double.infinity, height: screenHeight * 0.25, fit: BoxFit.cover),
+              Image.asset('assets/images/new_collection.png',
+                  width: double.infinity, height: screenHeight * 0.25, fit: BoxFit.cover),
               Positioned(
                 bottom: 15,
                 right: 15,
@@ -187,6 +191,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
+
           _buildHeader("Collections", () => setState(() => _currentIndex = 3)),
           SizedBox(
             height: screenHeight * 0.22,
@@ -200,11 +205,13 @@ class _HomePageState extends State<HomePage> {
               ],
             ),
           ),
+
           _buildHeader("New Arrivals", () => setState(() => _currentIndex = 2)),
           _buildProductGrid([
             _buildItemCardFromMap(_allProducts[0]),
             _buildItemCardFromMap(_allProducts[1]),
           ], screenHeight, screenWidth),
+
           _buildHeader("Winter 2026", () => setState(() => _currentIndex = 3)),
           _buildProductGrid([
             _buildItemCardFromMap(_allProducts[2]),
@@ -216,8 +223,10 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
+  // الفانكشن دي اللي كانت مسببة الـ Error وصلحناها ببعت الـ ID
   Widget _buildItemCardFromMap(Map<String, dynamic> p) {
     return ItemCard(
+      id: p['id'], // السطر ده هو اللي ربط الدنيا ببعضها
       title: p['title'],
       price: p['price'],
       imagePath: p['image'],

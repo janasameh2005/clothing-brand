@@ -1,87 +1,149 @@
+import 'package:clothing_brand/product_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../models/collection_model.dart';
+import '../cubit/collection_cubit.dart';
+import '../cubit/collection_state.dart';
+import '../custom_appbar.dart'; // تأكدي إن المسار ده صح عندك
 
 class CollectionsScreen extends StatelessWidget {
   const CollectionsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => CollectionsCubit()..fetchCollections(),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF5EFD2),
+        // 1. استخدام الـ AppBar الموحد هنا بدلاً من بنائه يدوياً في الـ body
+        body: BlocBuilder<CollectionsCubit, CollectionsState>(
+          builder: (context, state) {
+            if (state is CollectionsLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: Color(0xFF4D0C0C)),
+              );
+            } else if (state is CollectionsSuccess) {
+              return _buildCollectionContent(context, state.data);
+            } else if (state is CollectionsError) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text("Error: ${state.message}"),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () => context.read<CollectionsCubit>().fetchCollections(),
+                      style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF4D0C0C)),
+                      child: const Text("Retry", style: TextStyle(color: Colors.white)),
+                    )
+                  ],
+                ),
+              );
+            }
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCollectionContent(BuildContext context, CollectionResponse data) {
     double screenHeight = MediaQuery.of(context).size.height;
     double screenWidth = MediaQuery.of(context).size.width;
-
-    final List<Map<String, String>> categories = [
-      {"title": "Shirts", "image": "assets/images/white cotton shirt 1.png"},
-      {"title": "Pants", "image": "assets/images/white cotton shirt 1.png"},
-      {"title": "Dresses", "image": "assets/images/white cotton shirt 1.png"},
-      {"title": "Suits", "image": "assets/images/suit 1.png"},
-      {"title": "Blouse", "image": "assets/images/dress3 1.png"},
-      {"title": "Hoodies", "image": "assets/images/suit 1.png"},
-      {"title": "Vests", "image": "assets/images/suit 1.png"},
-      {"title": "Shirts", "image": "assets/images/white cotton shirt 1.png"},
-      {"title": "Jackets", "image": "assets/images/suit 1.png"},
-    ];
 
     return SingleChildScrollView(
       child: Column(
         children: [
+          // تم حذف الـ _buildCustomAppBar(context) من هنا لمنع التكرار
+
           Padding(
-            padding: EdgeInsets.symmetric(vertical: screenHeight * 0.03),
-            child: const Text(
-              "Collections",
-              style: TextStyle(
-                fontSize: 24,
+            padding: EdgeInsets.symmetric(vertical: screenHeight * 0.02),
+            child: Text(
+              data.headerBar.title,
+              style: const TextStyle(
+                fontSize: 28,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'serif',
                 color: Colors.black,
               ),
             ),
           ),
+
+          // الـ Grid بتاع الـ Collections
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: categories.length,
+              itemCount: data.collectionsGrid.length,
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 15,
+                crossAxisSpacing: 12,
+                mainAxisSpacing: 20,
                 childAspectRatio: (screenWidth / 3) / (screenHeight * 0.22),
               ),
               itemBuilder: (context, index) {
-                return _buildCategoryItem(
-                    categories[index]['title']!,
-                    categories[index]['image']!,
-                    screenHeight
+                final item = data.collectionsGrid[index];
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ProductsScreen(
+                          categoryId: item.id,
+                          categoryName: item.name,
+                        ),
+                      ),
+                    );
+                  },
+                  borderRadius: BorderRadius.circular(8),
+                  child: _buildCategoryItem(
+                    item.name,
+                    item.imageUrl,
+                    screenHeight,
+                  ),
                 );
               },
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildCategoryItem(String title, String path, double screenHeight) {
+  Widget _buildCategoryItem(String title, String imageUrl, double screenHeight) {
     return Column(
       children: [
         Expanded(
-          child: Image.asset(
-            path,
-            width: double.infinity,
-            fit: BoxFit.cover,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: imageUrl.startsWith('http')
+                ? Image.network(imageUrl, width: double.infinity, fit: BoxFit.cover)
+                : Image.asset(imageUrl, width: double.infinity, fit: BoxFit.cover),
           ),
         ),
-        const SizedBox(height: 5),
+        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               title,
               style: const TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 color: Color(0xFF4D0C0C),
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(width: 2),

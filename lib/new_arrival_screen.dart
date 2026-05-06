@@ -6,38 +6,45 @@ class NewArrivalsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // ضفنا الـ ID لكل منتج هنا برضه
     final List<Map<String, dynamic>> products = [
       {
+        "id": 1, // الـ ID اللي مربوط بالـ MockData
         "title": "Summer Dress",
         "price": "1400 EGP",
         "image": "assets/images/dress3 1.png",
         "colors": [Colors.pink[50]!, Colors.blue[900]!, Colors.red[900]!, Colors.green[900]!]
       },
       {
+        "id": 2,
         "title": "Linen Suit",
         "price": "2000 EGP",
         "image": "assets/images/suit 1.png",
         "colors": [Colors.grey[300]!, Colors.green[900]!, Colors.blue[900]!, Colors.black]
       },
       {
+        "id": 3,
         "title": "Pants",
         "price": "700 EGP",
         "image": "assets/images/white cotton shirt 1.png",
         "colors": [Colors.white, Colors.blue[900]!, Colors.red[900]!, Colors.green[900]!]
       },
       {
+        "id": 4,
         "title": "Black Vest",
         "price": "750 EGP",
         "image": "assets/images/suit 1.png",
         "colors": [Colors.teal[200]!, Colors.green[900]!, Colors.blue[900]!, Colors.black]
       },
       {
+        "id": 5,
         "title": "Floral Skirt",
         "price": "900 EGP",
         "image": "assets/images/dress3 1.png",
         "colors": [Colors.pink[50]!, Colors.blue[900]!, Colors.red[900]!, Colors.green[900]!]
       },
       {
+        "id": 6,
         "title": "Red Blouse",
         "price": "650 EGP",
         "image": "assets/images/suit 1.png",
@@ -75,7 +82,9 @@ class NewArrivalsScreen extends StatelessWidget {
                 ),
                 itemBuilder: (context, index) {
                   final p = products[index];
+                  // هنا بنبعت الـ ID للـ ItemCard
                   return ItemCard(
+                    id: p['id'], // السطر ده هو اللي هيحل الـ Error
                     title: p['title'],
                     price: p['price'],
                     imagePath: p['image'],

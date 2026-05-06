@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart'; // مهم جداً
 import 'product_details_screen.dart';
+import '../cubit/product_details_cubit.dart'; // تأكدي من المسار
 
 class WishlistScreen extends StatelessWidget {
   final List<Map<String, dynamic>> wishItems;
   final Function(Map<String, dynamic>) onToggle;
 
-   WishlistScreen({super.key, required this.wishItems, required this.onToggle});
+  const WishlistScreen({super.key, required this.wishItems, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
@@ -67,6 +69,7 @@ class WishlistScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                // النجوم والسعر...
                 Row(
                   children: List.generate(5, (index) => Icon(
                     index < (item['rating'] ?? 5) ? Icons.star : Icons.star_border,
@@ -86,17 +89,16 @@ class WishlistScreen extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
+                    // زرار الـ Shop اللي كان فيه الـ Error
                     GestureDetector(
                       onTap: () {
+                        // السحر هنا: نبعت الـ id ونستخدم الـ Cubit
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => ProductDetailsScreen(
-                              title: item['title'],
-                              price: item['price'],
-                              imagePath: item['image'],
-                              isFavorite: true,
-                              onFavoriteTap: () => onToggle(item),
+                            builder: (context) => BlocProvider(
+                              create: (context) => ProductDetailsCubit()..loadProductDetails(item['id']),
+                              child: ProductDetailsScreen(productId: item['id']),
                             ),
                           ),
                         );

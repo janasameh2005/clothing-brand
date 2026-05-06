@@ -1,0 +1,141 @@
+{
+  "header_bar": {
+    "brand_name": "Drapia",
+    "title": "Collections",
+    "show_back_button": true,
+    "show_notifications": true,
+    "show_language": true,
+    "logo_url": "https://i.ibb.co/qY080Xsc/icons8-sewing-100-2.png"
+  },
+  "banner": {
+    "type": "main_banner",
+    "title": "New Collection",
+    "image_url": "https://i.ibb.co/chXNXyS8/S-I-N-S-I-A-L-Y-Instabio-Link-in-bio-1.png",
+    "button_text": "shop now",
+    "target_screen": "ProductListScreen",
+    "params": {
+      "source": "products",
+      "type": "new_arrivals"
+    }
+  },
+  "collections_grid": [
+    {
+      "id": 1,
+      "name": "Shirts",
+      "image_url": "https://i.ibb.co/j9xDWhfw/Frame-6.png",
+      "target_params": {
+        "category_id": 1,
+        "category_name": "Shirts"
+      }
+    },
+    {
+      "id": 2,
+      "name": "Pants",
+      "image_url": "https://i.ibb.co/CKmSXz7G/Frame-8.png",
+      "target_params": {
+        "category_id": 2,
+        "category_name": "Pants"
+      }
+    },
+    {
+      "id": 3,
+      "name": "Dresses",
+      "image_url": "https://i.ibb.co/7N6NdNrd/Frame-7.png",
+      "target_params": {
+        "category_id": 3,
+        "category_name": "Dresses"
+      }
+    },
+    {
+      "id": 4,
+      "name": "Suits",
+      "image_url": "https://i.ibb.co/cKRsm48K/Frame-4.png",
+      "target_params": {
+        "category_id": 4,
+        "category_name": "Suits"
+      }
+    },
+    {
+      "id": 5,
+      "name": "Blouses",
+      "image_url": "https://i.ibb.co/fz1JkgWG/blouse-2.png",
+      "target_params": {
+        "category_id": 5,
+        "category_name": "Blouses"
+      }
+    },
+    {
+      "id": 6,
+      "name": "Hoodies",
+      "image_url": "https://i.ibb.co/1f7xL6QH/sweet-2.png",
+      "target_params": {
+        "category_id": 6,
+        "category_name": "Hoodies"
+      }
+    },
+    {
+      "id": 7,
+      "name": "Vests",
+      "image_url": "https://i.ibb.co/GQqDf5XC/Vest-2.png",
+      "target_params": {
+        "category_id": 7,
+        "category_name": "Vests"
+      }
+    },
+    {
+      "id": 8,
+      "name": "Skirts",
+      "image_url": "https://i.ibb.co/hqZFcXh/skirt-2.png",
+      "target_params": {
+        "category_id": 8,
+        "category_name": "Skirts"
+      }
+    },
+    {
+      "id": 9,
+      "name": "Jackets",
+      "image_url": "https://i.ibb.co/wZ2BgJ0g/Gabardina-cropped-1.png",
+      "target_params": {
+        "category_id": 9,
+        "category_name": "Jackets"
+      }
+    }
+  ],
+  "navigation_footer": [
+    {
+      "id": "home",
+      "label": "Home",
+      "icon_inactive": "home_outline",
+      "icon_active": "home_bold",
+      "target": "HomeScreen"
+    },
+    {
+      "id": "wishlist",
+      "label": "Wishlist",
+      "icon_inactive": "heart_outline",
+      "icon_active": "heart_bold",
+      "target": "WishlistScreen"
+    },
+    {
+      "id": "collections",
+      "label": "Collections",
+      "icon_inactive": "grid_outline",
+      "icon_active": "grid_bold",
+      "target": "CollectionsScreen"
+    },
+    {
+      "id": "cart",
+      "label": "Cart",
+      "icon_inactive": "cart_outline",
+      "icon_active": "cart_bold",
+      "target": "CartScreen"
+    },
+    {
+      "id": "profile",
+      "label": "Profile",
+      "icon_inactive": "person_outline",
+      "icon_active": "person_bold",
+      "target": "ProfileScreen"
+    }
+  ]
+}
